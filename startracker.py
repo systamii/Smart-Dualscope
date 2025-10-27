@@ -34,10 +34,10 @@ print("Submission ID: " + str(submission_id))
 
 while not job_complete:
     job_submission = (requests.get("http://nova.astrometry.net/api/submissions/"+str(submission_id)).json())
-    if( (len(job_submission["jobs"]) > 0) and (job_submission["jobs"][0] is not None) ):
+    if( (len(job_submission["jobs"]) > 0) and (job_submission["jobs"][0] is not None) and (job_submission["processing_finished"] is not None)):
         job_complete = True
         print("Job complete!")
-        time.sleep(1)
+        time.sleep(1.5)
         break
     else:
         if(attempt_counter >= 10):
