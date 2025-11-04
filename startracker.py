@@ -14,13 +14,20 @@ import camera_config
 
 # ---GOALS----
     #Take a Picture of the current surroundings [IN PROGRESS]
-    #Plate-Solve said picture to get rough estimate of where we are  [COMPLETED!]
-    #Allow user to select a target to observe [COMPLETED!]
     #Calibrate motors & move Telescope to the target [IN PROGRESS]
 
+
+#0.0 - Helper functions
+def set_capture_mode(input):
+    if (input == "Default" or "default"):
+        return "default selected" #we gotta add functionality to this
+    elif (input == "Trail" or "trail"):
+        return "trail selected"   #we gotta add functionality to this
+    else:
+        raise ValueError("Mode not recognized.")
+    
+
 #1.0 - Take a picture w/ the camera and save it to a file in the directory
-myCamera = gp.Camera()
-myCamera.init()
 
 #1.1- Login to the Astrometry API
 astrometry_login_request = (requests.post('http://nova.astrometry.net/api/login', data={'request-json': json.dumps({"apikey": env.astrometry_api_key})})).json()
@@ -37,7 +44,6 @@ job_complete = False
 attempt_counter = 0
 submission_id = astrometry_upload_request["subid"]
 print("Submission ID: " + str(submission_id))
-
 while not job_complete:
     job_submission = (requests.get("http://nova.astrometry.net/api/submissions/"+str(submission_id)).json())
     if( (len(job_submission["jobs"]) > 0) and (len(job_submission["job_calibrations"]) > 0) and (job_submission["jobs"][0] is not None) and (job_submission["processing_finished"] is not None)):
@@ -60,7 +66,22 @@ current_dec = processed_image_data["calibration"]["dec"] * u.deg
 print("Current RA: " + str(current_ra))
 print("Current dec: " + str(current_dec))
 # Phase 2: User-Inputted Stellar Object Lookup
-url_obtained = False    
+mode_selected = False
+while not mode_selected:
+        mode_toggle = input("Would you like to use a preset capture mode? (y/n) ")
+        if(mode_toggle == "y"):
+            while mode_selected is False:
+                try:
+                    mode_selection = input("What preset would you like to use? ")
+                    print(set_capture_mode(mode_selection))
+                    mode_selected = True
+                except ValueError:
+                    print("Unknown mode. Please try again.")
+                    time.sleep(1.5)
+
+        elif(mode_toggle == "n"):
+            break
+url_obtained = False
 while not url_obtained:
     try:
         stellar_obj = input("Please enter the name of your desired stellar object: ")
@@ -80,3 +101,5 @@ print("target Declination: "+str(target_dec))
 #2.0 Calibrate the motors. 1 Motor step = 1.8 degrees, so equate that to a change in RA/Declination.
 
 # Alternatively: We know that the Earth moves 365 degrees in 23h 56m; As such, it moves roughly 0.25 degrees each minute
+
+    
