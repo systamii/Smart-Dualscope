@@ -10,24 +10,50 @@ import numpy as np
 import pandas as pd
 import time
 import camera_config
-#                        ------------------PHASE ONE: TELESCOPE CALIBRATION-----------------------
+import os
+import gphoto2 as gp
 
-# ---GOALS----
-    #Take a Picture of the current surroundings [IN PROGRESS]
-    #Calibrate motors & move Telescope to the target [IN PROGRESS]
-
-
-#0.0 - Helper functions
-def set_capture_mode(input):
-    if (input == "Default" or "default"):
-        return "default selected" #we gotta add functionality to this
-    elif (input == "Trail" or "trail"):
-        return "trail selected"   #we gotta add functionality to this
-    else:
-        raise ValueError("Mode not recognized.")
     
 
 #1.0 - Take a picture w/ the camera and save it to a file in the directory
+def take_photo(camera, filepath):
+    camera_connected = False
+    my_camera = gp.Camera()
+    while(not camera_connected):
+        try:
+            my_camera.init()
+            camera_connected = True
+        except gp.GPhoto2Error as ex:
+            print("Camera not detected. Please ensure your device is turned on and connected.")
+            time.sleep(1.5)
+        img_data = my_camera.capture()
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
 
 #1.1- Login to the Astrometry API
 astrometry_login_request = (requests.post('http://nova.astrometry.net/api/login', data={'request-json': json.dumps({"apikey": env.astrometry_api_key})})).json()
@@ -102,4 +128,12 @@ print("target Declination: "+str(target_dec))
 
 # Alternatively: We know that the Earth moves 365 degrees in 23h 56m; As such, it moves roughly 0.25 degrees each minute
 
-    
+take_photo()
+#0.0 - Helper functions
+def set_capture_mode(input):
+    if (input == "Default" or "default"):
+        return "default selected" #we gotta add functionality to this
+    elif (input == "Trail" or "trail"):
+        return "trail selected"   #we gotta add functionality to this
+    else:
+        raise ValueError("Mode not recognized.")
