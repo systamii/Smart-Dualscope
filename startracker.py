@@ -11,22 +11,30 @@ import pandas as pd
 import time
 import camera_config
 import os
+import glob
+import cv2
 import gphoto2 as gp
 
     
 
 #1.0 - Take a picture w/ the camera and save it to a file in the directory
-def take_photo(camera, filepath):
+my_camera = gp.Camera()
+def take_photo(camera):
     camera_connected = False
-    my_camera = gp.Camera()
     while(not camera_connected):
         try:
-            my_camera.init()
+            camera.init()
             camera_connected = True
+            time.sleep(2)
         except gp.GPhoto2Error as ex:
             print("Camera not detected. Please ensure your device is turned on and connected.")
             time.sleep(1.5)
-        img_data = my_camera.capture()
+    img_path = my_camera.capture(gp.GP_CAPTURE_IMAGE)
+    camera_file = my_camera.file_get(img_path.folder, img_path.name,gp.GP_FILE_TYPE_NORMAL)
+    camera_file.save("/Users/jchandler/Desktop/PIE/photos/brehhhhhh.jpg")
+
+take_photo(my_camera)
+
     
 
 
@@ -128,7 +136,6 @@ print("target Declination: "+str(target_dec))
 
 # Alternatively: We know that the Earth moves 365 degrees in 23h 56m; As such, it moves roughly 0.25 degrees each minute
 
-take_photo()
 #0.0 - Helper functions
 def set_capture_mode(input):
     if (input == "Default" or "default"):
