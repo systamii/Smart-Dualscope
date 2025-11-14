@@ -15,10 +15,8 @@ import glob
 import cv2
 import gphoto2 as gp
 
-    
 
-#1.0 - Take a picture w/ the camera and save it to a file in the directory
-my_camera = gp.Camera()
+# functions
 def take_photo(camera):
     camera_connected = False
     while(not camera_connected):
@@ -29,39 +27,30 @@ def take_photo(camera):
         except gp.GPhoto2Error as ex:
             print("Camera not detected. Please ensure your device is turned on and connected.")
             time.sleep(1.5)
-    img_path = my_camera.capture(gp.GP_CAPTURE_IMAGE)
-    camera_file = my_camera.file_get(img_path.folder, img_path.name,gp.GP_FILE_TYPE_NORMAL)
+    img_path = camera.capture(gp.GP_CAPTURE_IMAGE)
+    camera_file = camera.file_get(img_path.folder, img_path.name,gp.GP_FILE_TYPE_NORMAL)
     camera_file.save("/Users/jchandler/Desktop/PIE/photos/brehhhhhh.jpg")
+    typ,data = camera.wait_for_event(200)
+    while typ != gp.GP_EVENT_TIMEOUT:
+        if (typ == gp.GP_EVENT_FILE_ADDED):
+            fn = os.path.join(data.folder,data.name)
+            print("New file: %s" % fn)
+            typ,data = camera.wait_for_event(1)
+    camera.exit()
 
+
+def set_capture_mode(input):
+    if (input == "Default" or "default"):
+        return "default selected" #we gotta add functionality to this
+    elif (input == "Trail" or "trail"):
+        return "trail selected"   #we gotta add functionality to this
+    else:
+        raise ValueError("Mode not recognized.")
+    
+
+#1.0 - Take a picture w/ the camera and save it to a file in the directory
+my_camera = gp.Camera()
 take_photo(my_camera)
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
 
 #1.1- Login to the Astrometry API
 astrometry_login_request = (requests.post('http://nova.astrometry.net/api/login', data={'request-json': json.dumps({"apikey": env.astrometry_api_key})})).json()
@@ -107,7 +96,7 @@ while not mode_selected:
             while mode_selected is False:
                 try:
                     mode_selection = input("What preset would you like to use? ")
-                    print(set_capture_mode(mode_selection))
+                    set_capture_mode(mode_selection)
                     mode_selected = True
                 except ValueError:
                     print("Unknown mode. Please try again.")
@@ -135,12 +124,3 @@ print("target Declination: "+str(target_dec))
 #2.0 Calibrate the motors. 1 Motor step = 1.8 degrees, so equate that to a change in RA/Declination.
 
 # Alternatively: We know that the Earth moves 365 degrees in 23h 56m; As such, it moves roughly 0.25 degrees each minute
-
-#0.0 - Helper functions
-def set_capture_mode(input):
-    if (input == "Default" or "default"):
-        return "default selected" #we gotta add functionality to this
-    elif (input == "Trail" or "trail"):
-        return "trail selected"   #we gotta add functionality to this
-    else:
-        raise ValueError("Mode not recognized.")
