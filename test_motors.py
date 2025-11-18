@@ -18,17 +18,13 @@ tilt_steps = 0
 
 try:
     while True:
-        # if tilt_steps <= 100:
-        #     print(f'Step: {tilt_steps}')
-        #     sleep(.05)
-        #     gpio.output(tilt_direction,ccw_direction)
-        #     gpio.output(tilt_pulse,gpio.HIGH)
-        #     sleep(.0001)
-        #     gpio.output(tilt_pulse,gpio.LOW)
-        #     sleep(.0001)
-        #     tilt_steps+=1
-        # else:
-        #     pass
+        sleep(.05)
+        gpio.output(tilt_direction,ccw_direction)
+        gpio.output(tilt_pulse,gpio.HIGH)
+        sleep(.0001)
+        gpio.output(tilt_pulse,gpio.LOW)
+        sleep(.0001)
+
         # Need to implement a push switch so that the camera lens doesn't crash into the pan mechanism
     
         sleep(.0001)
@@ -37,8 +33,6 @@ try:
         sleep(.0001)
         gpio.output(pan_pulse,gpio.LOW)
         sleep(.0001)
-
-
 
 
 except KeyboardInterrupt:
