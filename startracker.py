@@ -5,10 +5,11 @@ import json
 import env
 import time
 from astropy.coordinates.name_resolve import NameResolveError
+from raw2fits.image import Image
 import astropy.units as u
 import os
 
-PRESET_MODES = ["Manual", "Nebula"]
+PRESET_MODES = ["Default", "Nebula"]
 
 def reset(camera):
     """
@@ -35,13 +36,16 @@ def take_photo(camera):
             time.sleep(1.5)
     img_path = camera.capture(gp.GP_CAPTURE_IMAGE)
     camera_file = camera.file_get(img_path.folder, img_path.name, gp.GP_FILE_TYPE_NORMAL)
-    filepath = "/Users/jchandler/Desktop/PIE/photos/" + str(img_path.name)
+    filepath = "/Users/jchandler/Desktop/PIE/raw_photos/" + str(img_path.name)
     camera_file.save(filepath)
     camera.exit()
-    return (filepath)
+    img = Image(path=filepath, debayer_method="VNG")
+    img.save_fits(image_type="LIGHT", path="/Users/jchandler/Desktop/PIE/photos/")
+    fits_filepath = img.path
+    return("/Users/jchandler/Desktop/PIE/photos/IMG_9104.png")
 
 
-def set_capture_mode():
+def set_capture_mode(camera):
     mode_selected = False
     while not mode_selected:
             mode_toggle = input("Would you like to use a preset capture mode? (y/n) ")
@@ -50,6 +54,14 @@ def set_capture_mode():
                         mode_selection = input("What preset would you like to use? ")
                         if(mode_selection in PRESET_MODES):
                             mode_selected = True
+                            if(mode_selected == "Default"):
+                                try:
+                                    config = camera.get_config()
+                                    iso = config.get_child_by_name('iso')
+                                except LookupError:
+                                    iso = config.get_child_by_name('imgsettings').get_child_by_name('iso')
+                                iso.set_value(400)
+                                camera.set_config(config)
                             break
                         else:
                             print("Unknown mode. Please try again.")
@@ -63,9 +75,10 @@ def plate_solver(ref_photo):
     session_key = astrometry_login_request["session"]
 
     #1.2- Upload sample file to the Astrometry API
-    files = {'file': open("photos/IMG_9104.png", 'rb')}
+    files = {'file': open(ref_photo, 'rb')}
     data = {'request-json': json.dumps({'session': session_key})}
     astrometry_upload_request = requests.post(env.upload_url, data=data, files=files).json()
+
     #1.3 Get results from the file upload
     job_complete = False
     attempt_counter = 0
@@ -79,12 +92,11 @@ def plate_solver(ref_photo):
             time.sleep(1.5)
             break
         else:
-            if(attempt_counter >= 10):
-                print("An error occurred. Please try again.")
+            if(attempt_counter >= 20):
                 break
             else:
                 print("Job still in progress. Retrying...")
-                time.sleep(2.5)
+                time.sleep(5)
             attempt_counter += 1
     job_id = job_submission["jobs"][0]
     print("Job ID: " + str(job_id))
@@ -116,12 +128,13 @@ def object_finder():
 # Alternatively: We know that the Earth moves 365 degrees in 23h 56m; As such, it moves roughly 0.25 degrees each minute
 
 my_camera = gp.Camera()
-set_capture_mode()
+set_capture_mode(my_camera)
 my_cal_photo = take_photo(my_camera)
 calibration_ra, calibration_dec = plate_solver(my_cal_photo)
 target_ra, target_dec = object_finder()
 print("Target Right Ascension: "+str(target_ra))
 print("target Declination: "+str(target_dec))
+
 def move_to_target(target_ra,target_dec):
     while target_ra != calibration_ra:
         if calibration_ra > target_ra:
@@ -136,3 +149,33 @@ def move_to_target(target_ra,target_dec):
         if target_dec < calibration_dec:
             print("move motors down")
 
+# ---- CAMERA CONFIGURATION TESTING CODE, ONLY UNCOMMENT IF YOU KNOW WHAT YOU'RE DOING -----
+# camera = gp.Camera()
+# camera.init()
+# config = camera.get_config()
+# imgsettings = config.get_child_by_name('imgsettings')
+# capture_settings = config.get_child_by_name('capturesettings')
+
+# print(imgsettings)
+
+# for i in range(capture_settings.count_children()):
+#     child = capture_settings.get_child(i)
+#     print(f"Setting: {child.get_name()} | Label: {child.get_label()}")
+# print("---------------------------------------")
+# for i in range(imgsettings.count_children()):
+#     child = imgsettings.get_child(i)
+#     print(f"Setting: {child.get_name()} | Label: {child.get_label()}")
+
+# image_format = imgsettings.get_child_by_name('imageformat')
+# iso = imgsettings.get_child_by_name('iso')
+# aperture = capture_settings.get_child_by_name('aperture')
+
+# image_format.set_value("RAW")
+# camera.set_config(config)
+# iso.set_value("1600")
+# camera.set_config(config)
+# aperture.set_value("4")
+# camera.set_config(config)
+
+# print((iso.get_value()))
+# camera.capture(gp.GP_CAPTURE_IMAGE)
